@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Celebrations Crossword</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+    <style>
+        /* Layout: graph-paper notebook page — crossword grid on the left, picture clue cards on the right, stacked on phones */
+        :root {
+            --paper: #fbfdff;
+            --grid-line: #d9e6f2;
+            --ink: #23324a;
+            --muted: #5d6e88;
+            --orange: #ff7a1a;
+            --purple: #7b4ce2;
+            --pink: #ff4f8b;
+            --teal: #14b8a6;
+            --yellow: #ffc928;
+            --blue: #2f80ed;
+            --cell: #ffffff;
+            --cell-border: #23324a;
+            --hl: #fff1c2;
+            --active: #ffd84d;
+            --ok: #bff0c9;
+            --ok-ink: #167a35;
+            --bad: #ffc9d1;
+            --display: "Fredoka", "Baloo 2", "Comic Sans MS", system-ui, sans-serif;
+            --body: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+            color-scheme: light;
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        [hidden] {
+            display: none !important
+        }
+
+        body {
+            background-color: var(--paper);
+            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 22px 22px;
+            color: var(--ink);
+            font-family: var(--body);
+            padding-left: max(16px, env(safe-area-inset-left, 0px));
+            padding-right: max(16px, env(safe-area-inset-right, 0px));
+            margin: 0;
+            padding-block: 20px 40px;
+            min-height: 100%;
+        }
+
+        .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px
+        }
+
+        h1 {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: clamp(28px, 5vw, 46px);
+            line-height: 1;
+            margin: 0;
+            text-wrap: balance
+        }
+
+        h1 span {
+            display: inline-block
+        }
+
+        h1 .c1 {
+            color: var(--orange)
+        }
+
+        h1 .c2 {
+            color: var(--purple)
+        }
+
+        h1 .c3 {
+            color: var(--teal)
+        }
+
+        .sub {
+            margin: 6px 0 0;
+            color: var(--muted);
+            font-weight: 700
+        }
+
+        .progress {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fff;
+            border: 3px solid var(--ink);
+            border-radius: 999px;
+            padding: 6px 14px 6px 8px;
+            box-shadow: 4px 4px 0 var(--ink)
+        }
+
+        .stars {
+            display: flex;
+            gap: 2px
+        }
+
+        .star {
+            width: 24px;
+            height: 24px;
+            fill: #e3e9f2;
+            transition: fill .3s, transform .3s
+        }
+
+        .star.on {
+            fill: var(--yellow);
+            transform: scale(1.15) rotate(-8deg)
+        }
+
+        .progress b {
+            font-family: var(--display);
+            font-size: 18px;
+            font-variant-numeric: tabular-nums
+        }
+
+        .main {
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+            gap: 24px;
+            align-items: start
+        }
+
+        @media (max-width:860px) {
+            .main {
+                grid-template-columns: minmax(0, 1fr)
+            }
+        }
+
+        .board {
+            background: #fff;
+            border: 3px solid var(--ink);
+            border-radius: 18px;
+            box-shadow: 6px 6px 0 var(--ink);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 0
+        }
+
+        .now {
+            min-height: 56px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--hl);
+            border-radius: 12px;
+            padding: 8px 12px
+        }
+
+        .now .badge {
+            font-family: var(--display);
+            font-weight: 700;
+            color: #fff;
+            background: var(--purple);
+            border-radius: 10px;
+            padding: 4px 10px;
+            white-space: nowrap
+        }
+
+        .now p {
+            margin: 0;
+            font-weight: 800;
+            font-size: 15px;
+            line-height: 1.3
+        }
+
+        .gridbox {
+            container-type: inline-size;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 2px
+        }
+
+        .grid {
+            --n: 15;
+            --cs: min(46px, calc((100cqw - 6px)/15));
+            display: grid;
+            grid-template-columns: repeat(var(--n), var(--cs));
+            grid-auto-rows: var(--cs);
+            gap: 0
+        }
+
+        .cell {
+            position: relative
+        }
+
+        .cell.fill {
+            background: var(--cell);
+            outline: 2px solid var(--cell-border);
+            outline-offset: -1px;
+            transition: background .2s
+        }
+
+        .cell.fill.inword {
+            background: var(--hl)
+        }
+
+        .cell.fill.cur {
+            background: var(--active)
+        }
+
+        .cell.fill.solved {
+            background: var(--ok)
+        }
+
+        .cell.fill.solved input {
+            color: var(--ok-ink)
+        }
+
+        .cell.fill.bad {
+            background: var(--bad);
+            animation: shake .35s
+        }
+
+        .cell input {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+            background: transparent;
+            text-align: center;
+            text-transform: uppercase;
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: calc(var(--cs) * .56);
+            color: var(--ink);
+            padding: calc(var(--cs) * .12) 0 0;
+            caret-color: transparent;
+            border-radius: 0
+        }
+
+        .cell input:focus {
+            outline: none
+        }
+
+        .num {
+            position: absolute;
+            top: 1px;
+            left: 3px;
+            font-size: calc(var(--cs) * .27);
+            font-weight: 800;
+            color: var(--muted);
+            pointer-events: none;
+            line-height: 1;
+            z-index: 1
+        }
+
+        .pop {
+            animation: pop .45s
+        }
+
+        @keyframes pop {
+            40% {
+                transform: scale(1.25)
+            }
+        }
+
+        @keyframes shake {
+            25% {
+                transform: translateX(-3px)
+            }
+
+            75% {
+                transform: translateX(3px)
+            }
+        }
+
+        .tools {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center
+        }
+
+        button {
+            font-family: var(--display);
+            font-weight: 600;
+            font-size: 16px;
+            border: 3px solid var(--ink);
+            border-radius: 12px;
+            padding: 8px 16px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--ink);
+            transition: transform .1s, box-shadow .1s;
+            color: var(--ink)
+        }
+
+        button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0 var(--ink)
+        }
+
+        button:active {
+            transform: translate(2px, 2px);
+            box-shadow: 1px 1px 0 var(--ink)
+        }
+
+        button:focus-visible {
+            outline: 3px solid var(--blue);
+            outline-offset: 3px
+        }
+
+        .b-check {
+            background: var(--teal);
+            color: #fff
+        }
+
+        .b-hint {
+            background: var(--yellow)
+        }
+
+        .b-reset {
+            background: #fff
+        }
+
+        .clues {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            min-width: 0
+        }
+
+        @media (max-width:520px) {
+            .clues {
+                grid-template-columns: minmax(0, 1fr)
+            }
+        }
+
+        .card {
+            background: #fff;
+            border: 3px solid var(--ink);
+            border-radius: 16px;
+            overflow: hidden;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            transition: transform .15s, box-shadow .15s;
+            box-shadow: 4px 4px 0 var(--ink);
+            text-align: left;
+            padding: 0;
+            font: inherit
+        }
+
+        .card:hover {
+            transform: translateY(-3px) rotate(-.5deg)
+        }
+
+        .card.active {
+            box-shadow: 4px 4px 0 var(--ink), 0 0 0 4px var(--active)
+        }
+
+        .card .pic {
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative
+        }
+
+        .card .pic img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block
+        }
+
+        .card .pic svg {
+            height: 100%;
+            width: auto;
+            max-width: 100%
+        }
+
+        .card .txt {
+            padding: 10px 12px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            border-top: 3px solid var(--ink);
+            flex: 1
+        }
+
+        .card .top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px
+        }
+
+        .card .n {
+            font-family: var(--display);
+            font-weight: 700;
+            font-size: 15px;
+            color: #fff;
+            border-radius: 8px;
+            padding: 2px 9px
+        }
+
+        .card .dir {
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .06em;
+            color: var(--muted)
+        }
+
+        .card .q {
+            margin: 0;
+            font-weight: 700;
+            font-size: 15px;
+            line-height: 1.35
+        }
+
+        .card .ans {
+            font-family: var(--display);
+            font-weight: 600;
+            color: var(--ok-ink);
+            font-size: 16px;
+            letter-spacing: .06em
+        }
+
+        .card .done {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: var(--ok-ink);
+            color: #fff;
+            font-family: var(--display);
+            font-weight: 700;
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: 13px;
+            transform: scale(0);
+            transition: transform .35s cubic-bezier(.3, 1.6, .5, 1)
+        }
+
+        .card.solved .done {
+            transform: scale(1)
+        }
+
+        .card.solved {
+            border-color: var(--ok-ink)
+        }
+
+        .win {
+            position: fixed;
+            inset: 0;
+            background: rgba(35, 50, 74, .55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 30;
+            padding: 20px
+        }
+
+        .win .box {
+            background: #fff;
+            border: 4px solid var(--ink);
+            border-radius: 22px;
+            box-shadow: 8px 8px 0 var(--ink);
+            padding: 26px 28px;
+            text-align: center;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            animation: pop .5s
+        }
+
+        .win h2 {
+            font-family: var(--display);
+            font-size: 38px;
+            margin: 0;
+            color: var(--orange)
+        }
+
+        .win p {
+            margin: 0;
+            font-weight: 700
+        }
+
+        canvas#fx {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 40;
+            width: 100%;
+            height: 100%
+        }
+
+        @media (prefers-reduced-motion:reduce) {
+            * {
+                animation: none !important;
+                transition: none !important
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrap">
+        <header>
+            <div>
+                <h1><span class="c1">Celebrations</span> <span class="c2">Cross</span><span class="c3">word</span></h1>
+                <p class="sub">Look at the picture, read the sentence and write the celebration!</p>
+            </div>
+            <div class="progress" aria-live="polite">
+                <div class="stars" id="stars"></div>
+                <b id="count">0 / 6</b>
+            </div>
+        </header>
+
+        <div class="main">
+            <section class="board">
+                <div class="now"><span class="badge" id="nowBadge">1 Down</span>
+                    <p id="nowText"></p>
+                </div>
+                <div class="gridbox">
+                    <div class="grid" id="grid"></div>
+                </div>
+                <div class="tools">
+                    <button class="b-check" id="check">Check ✔</button>
+                    <button class="b-hint" id="hint">Hint 💡</button>
+                    <button class="b-reset" id="reset">Start again</button>
+                </div>
+            </section>
+            <section class="clues" id="clues"></section>
+        </div>
+    </div>
+
+    <div class="win" id="win" hidden>
+        <div class="box">
+            <svg viewBox="0 0 100 100" width="90" height="90">
+                <path d="M50 6l12 28 30 3-23 20 7 30-26-16-26 16 7-30L8 37l30-3z" fill="#ffc928" stroke="#23324a"
+                    stroke-width="4" stroke-linejoin="round" />
+                <circle cx="40" cy="50" r="4" fill="#23324a" />
+                <circle cx="60" cy="50" r="4" fill="#23324a" />
+                <path d="M40 62q10 9 20 0" stroke="#23324a" stroke-width="4" fill="none" stroke-linecap="round" />
+            </svg>
+            <h2>Great job!</h2>
+            <p>You found all 6 celebrations.</p>
+            <button class="b-check" id="again">Play again</button>
+        </div>
+    </div>
+    <canvas id="fx"></canvas>
+
+    <script>
+        const PICS = {
+            halloween: `<svg viewBox="0 0 140 100"><rect width="140" height="100" fill="#2b1d52"/><circle cx="112" cy="22" r="13" fill="#ffe9a8"/><circle cx="20" cy="16" r="1.6" fill="#fff"/><circle cx="60" cy="10" r="1.4" fill="#fff"/><circle cx="88" cy="40" r="1.2" fill="#fff"/>
+ <path d="M30 90 L42 34 Q46 26 50 34 L62 90Z" fill="#7b4ce2"/><path d="M30 40 L46 16 L58 40Z" fill="#7b4ce2"/><path d="M28 40h36" stroke="#23324a" stroke-width="4"/><circle cx="46" cy="50" r="10" fill="#ffd9b8"/><circle cx="42.5" cy="49" r="1.6" fill="#23324a"/><circle cx="49.5" cy="49" r="1.6" fill="#23324a"/><path d="M42 54q4 3 8 0" stroke="#23324a" stroke-width="1.6" fill="none"/>
+ <ellipse cx="92" cy="74" rx="22" ry="18" fill="#ff7a1a"/><path d="M82 60q10-5 20 0" stroke="#d65e05" stroke-width="2" fill="none"/><path d="M92 58v-6" stroke="#2f8f3a" stroke-width="4" stroke-linecap="round"/><path d="M83 70l5-5 5 5zM93 70l5-5 5 5z" fill="#23324a"/><path d="M82 80q10 8 20 0l-4 0-3 3-3-3-4 3-3-3z" fill="#23324a"/>
+ <circle cx="76" cy="52" r="5" fill="#ff4f8b"/><rect x="100" y="48" width="12" height="7" rx="3" fill="#14b8a6"/><circle cx="66" cy="62" r="4" fill="#ffc928"/></svg>`,
+            christmas: `<svg viewBox="0 0 140 100"><rect width="140" height="100" fill="#dff3ff"/><rect y="84" width="140" height="16" fill="#fff"/>
+ <path d="M60 10 L86 46 H74 L94 72 H26 L46 46 H34Z" fill="#1f9d55"/><rect x="54" y="72" width="12" height="12" fill="#8a5a2b"/><path d="M60 3l3 7h7l-6 4 2 7-6-4-6 4 2-7-6-4h7z" fill="#ffc928"/>
+ <circle cx="52" cy="38" r="3.5" fill="#ff4f8b"/><circle cx="68" cy="52" r="3.5" fill="#ffc928"/><circle cx="48" cy="62" r="3.5" fill="#2f80ed"/><circle cx="74" cy="64" r="3.5" fill="#ff4f8b"/><circle cx="62" cy="30" r="3" fill="#2f80ed"/>
+ <rect x="88" y="64" width="22" height="20" fill="#e5383b"/><rect x="97" y="64" width="4" height="20" fill="#ffc928"/><path d="M99 64q-8-9-10 0M99 64q8-9 10 0" stroke="#ffc928" stroke-width="3" fill="none"/>
+ <rect x="112" y="70" width="16" height="14" fill="#7b4ce2"/><rect x="118" y="70" width="4" height="14" fill="#fff"/>
+ <rect x="10" y="68" width="18" height="16" fill="#14b8a6"/><rect x="17" y="68" width="4" height="16" fill="#ff4f8b"/></svg>`,
+            dead: `<svg viewBox="0 0 140 100"><rect width="140" height="100" fill="#3a2563"/><rect y="74" width="140" height="26" fill="#8a4fd8"/><path d="M0 74h140" stroke="#ff4f8b" stroke-width="4" stroke-dasharray="8 6"/>
+ <rect x="58" y="22" width="24" height="30" rx="3" fill="#fff6e0" stroke="#ffc928" stroke-width="2.5"/><circle cx="70" cy="34" r="6" fill="#23324a" opacity=".25"/><path d="M64 46h12" stroke="#23324a" opacity=".25" stroke-width="2"/>
+ <rect x="20" y="46" width="10" height="28" fill="#fff"/><path d="M25 46q-6-8 0-16q6 8 0 16z" fill="#ffc928"/><path d="M25 44q-2-4 0-8q2 4 0 8z" fill="#ff7a1a"/>
+ <rect x="110" y="46" width="10" height="28" fill="#fff"/><path d="M115 46q-6-8 0-16q6 8 0 16z" fill="#ffc928"/><path d="M115 44q-2-4 0-8q2 4 0 8z" fill="#ff7a1a"/>
+ <g fill="#ff9f1c"><circle cx="44" cy="66" r="8"/><circle cx="58" cy="64" r="7"/><circle cx="82" cy="64" r="7"/><circle cx="96" cy="66" r="8"/><circle cx="70" cy="66" r="6"/></g>
+ <g fill="#ffc928"><circle cx="44" cy="66" r="3.5"/><circle cx="58" cy="64" r="3"/><circle cx="82" cy="64" r="3"/><circle cx="96" cy="66" r="3.5"/><circle cx="70" cy="66" r="2.5"/></g></svg>`,
+            birthday: `<svg viewBox="0 0 140 100"><rect width="140" height="100" fill="#ffe3ef"/>
+ <path d="M8 0 Q20 18 34 6 T60 4" stroke="#7b4ce2" stroke-width="2" fill="none"/><path d="M14 8l4 10 4-12M40 4l5 10 3-12" stroke="#ff7a1a" stroke-width="3" fill="none"/>
+ <ellipse cx="114" cy="30" rx="12" ry="15" fill="#2f80ed"/><path d="M114 45q-3 14 3 30" stroke="#23324a" stroke-width="1.5" fill="none"/><ellipse cx="126" cy="44" rx="9" ry="11" fill="#ffc928"/><path d="M126 55q2 12-2 22" stroke="#23324a" stroke-width="1.5" fill="none"/>
+ <rect x="36" y="60" width="62" height="28" rx="4" fill="#ff4f8b"/><rect x="42" y="42" width="50" height="20" rx="4" fill="#fff"/><path d="M42 50q6 6 12 0t12 0 13 0 13 0" stroke="#ff4f8b" stroke-width="4" fill="none"/>
+ <rect x="54" y="28" width="4" height="14" fill="#14b8a6"/><rect x="66" y="26" width="4" height="16" fill="#ffc928"/><rect x="78" y="28" width="4" height="14" fill="#7b4ce2"/>
+ <g fill="#ff7a1a"><path d="M56 27q-4-5 0-10q4 5 0 10z"/><path d="M68 25q-4-5 0-10q4 5 0 10z"/><path d="M80 27q-4-5 0-10q4 5 0 10z"/></g><rect x="30" y="86" width="74" height="6" rx="3" fill="#23324a"/></svg>`,
+            mothers: `<svg viewBox="0 0 140 100"><rect width="140" height="100" fill="#fff4d6"/>
+ <path d="M30 26c-6-10-22-6-18 6 2 7 18 16 18 16s16-9 18-16c4-12-12-16-18-6z" fill="#ff4f8b"/>
+ <path d="M70 92V48" stroke="#2f8f3a" stroke-width="4"/><path d="M70 72q-14-4-16-14q14 2 16 14zM70 64q14-4 16-14q-14 2-16 14z" fill="#3cbf5b"/>
+ <g fill="#ff7a1a"><circle cx="70" cy="28" r="9"/><circle cx="58" cy="36" r="9"/><circle cx="82" cy="36" r="9"/><circle cx="62" cy="48" r="9"/><circle cx="78" cy="48" r="9"/></g><circle cx="70" cy="40" r="8" fill="#ffc928"/>
+ <rect x="94" y="58" width="32" height="30" fill="#7b4ce2"/><rect x="92" y="52" width="36" height="9" fill="#9b72f0"/><rect x="107" y="52" width="6" height="36" fill="#ffc928"/><path d="M110 52q-12-14-14 0M110 52q12-14 14 0" stroke="#ffc928" stroke-width="4" fill="none"/>
+ <text x="20" y="80" font-family="Fredoka,sans-serif" font-weight="700" font-size="16" fill="#ff4f8b">MOM</text></svg>`,
+            carnival: `<svg viewBox="0 0 140 100"><rect width="140" height="100" fill="#d6f7ff"/><circle cx="20" cy="20" r="12" fill="#ffc928"/>
+ <path d="M10 92q20-14 40 0" fill="#7fd3ff"/><g fill="#2f80ed" opacity=".6"><circle cx="16" cy="76" r="3"/><circle cx="28" cy="70" r="2.5"/><circle cx="42" cy="74" r="3"/></g>
+ <path d="M56 24 Q48 30 52 42 Q58 52 66 42 Q70 30 56 24Z" fill="#ff4f8b"/><path d="M58 50l-3 6h6z" fill="#ff4f8b"/>
+ <path d="M40 46 Q32 52 36 64 Q42 74 50 64 Q54 52 40 46Z" fill="#14b8a6"/><path d="M42 72l-3 6h6z" fill="#14b8a6"/>
+ <rect x="96" y="44" width="18" height="40" rx="5" fill="#ff7a1a"/><rect x="99" y="36" width="12" height="9" fill="#23324a"/><rect x="96" y="56" width="18" height="10" fill="#fff"/>
+ <g fill="#fff" stroke="#9fc6d8" stroke-width="1.5"><circle cx="90" cy="32" r="7"/><circle cx="80" cy="26" r="8"/><circle cx="70" cy="20" r="7"/><circle cx="84" cy="16" r="6"/></g>
+ <path d="M118 60q12-4 14 6M120 70q10 2 10 12" stroke="#2f80ed" stroke-width="3" fill="none" stroke-linecap="round"/></svg>`
+        };
+        const IMGS = { "halloween": "https://i.ibb.co/HWM6wH4/HALLOWEN.jpg", "christmas": "https://i.ibb.co/Z0XTSqt/CHRISMAS.jpg", "dead": "https://i.ibb.co/ycvj7scL/Day-of-Dead.jpg", "birthday": "https://i.ibb.co/DPNdDWN7/Birthday.jpg", "mothers": "https://i.ibb.co/r8Kvp7k/Mothers-day.jpg", "carnival": "https://i.ibb.co/JRG4MjBP/Carnival.jpg" };
+        const COLORS = ['#7b4ce2', '#ff7a1a', '#ff4f8b', '#14b8a6', '#2f80ed', '#e5383b'];
+        const BG = { halloween: '#2b1d52', christmas: '#dff3ff', dead: '#3a2563', birthday: '#ffe3ef', mothers: '#fff4d6', carnival: '#d6f7ff' };
+        const WORDS = [
+            { n: 1, dir: 'down', r: 0, c: 4, ans: 'CHRISTMAS', show: 'CHRISTMAS', clue: 'We received gifts and ate with our families.', pic: 'christmas' },
+            { n: 2, dir: 'across', r: 1, c: 4, ans: 'HALLOWEEN', show: 'HALLOWEEN', clue: 'Kids wore costumes and collected candy last night.', pic: 'halloween' },
+            { n: 3, dir: 'down', r: 2, c: 11, ans: 'BIRTHDAY', show: 'BIRTHDAY', clue: 'We gave a gift and cried our friend on her special day.', pic: 'birthday' },
+            { n: 4, dir: 'across', r: 3, c: 0, ans: 'CARNIVAL', show: 'CARNIVAL', clue: 'We play with carioca and water during 3 days.', pic: 'carnival' },
+            { n: 5, dir: 'down', r: 5, c: 8, ans: 'MOTHERSDAY', show: "MOTHER'S DAY", clue: 'Children gave a present and a flower to their mothers.', pic: 'mothers' },
+            { n: 6, dir: 'across', r: 7, c: 3, ans: 'DAYOFTHEDEAD', show: 'DAY OF THE DEAD', clue: 'We prayed for our dead.', pic: 'dead' }
+        ];
+        const N = 15, cells = {}, key = (r, c) => r + ',' + c;
+        WORDS.forEach((w, i) => {
+            w.i = i; w.cells = []; for (let k = 0; k < w.ans.length; k++) {
+                const r = w.dir === 'down' ? w.r + k : w.r, c = w.dir === 'across' ? w.c + k : w.c; const K = key(r, c);
+                if (!cells[K]) cells[K] = { r, c, letter: w.ans[k], words: [] }; cells[K].words.push(i); w.cells.push(K);
+            }
+        });
+
+        const gridEl = document.getElementById('grid'), inputs = {};
+        for (let r = 0; r < N; r++)for (let c = 0; c < N; c++) {
+            const d = document.createElement('div'); d.className = 'cell'; const K = key(r, c);
+            if (cells[K]) {
+                d.classList.add('fill'); const inp = document.createElement('input'); inp.id = 'c' + r + '-' + c; inp.maxLength = 2; inp.autocomplete = 'off'; inp.setAttribute('autocapitalize', 'characters'); inp.spellcheck = false;
+                inp.setAttribute('aria-label', 'Row ' + (r + 1) + ' column ' + (c + 1)); d.appendChild(inp); inputs[K] = inp; cells[K].el = d;
+                const st = WORDS.find(w => w.r === r && w.c === c); if (st) { const s = document.createElement('span'); s.className = 'num'; s.textContent = st.n; d.appendChild(s); }
+                inp.addEventListener('focus', () => onFocus(K)); inp.addEventListener('mousedown', e => { if (document.activeElement === inp) { toggleDir(K); } });
+                inp.addEventListener('keydown', e => onKey(e, K)); inp.addEventListener('input', e => onInput(e, K));
+            }
+            gridEl.appendChild(d);
+        }
+
+        const cluesEl = document.getElementById('clues');
+        WORDS.forEach((w, i) => {
+            const b = document.createElement('button'); b.className = 'card'; b.id = 'card' + i;
+            b.innerHTML = `<div class="pic" style="background:${BG[w.pic]}"><img src="${IMGS[w.pic]}" alt="${w.show}" loading="lazy" onerror="this.outerHTML=PICS['${w.pic}']"><span class="done">✓ Done</span></div>
+  <div class="txt"><div class="top"><span class="n" style="background:${COLORS[i]}">${w.n}</span><span class="dir">${w.dir} · ${w.ans.length} letters</span></div>
+  <p class="q">${w.clue}</p><span class="ans" hidden></span></div>`;
+            b.addEventListener('click', () => { active = i; focusCell(firstEmpty(w)); }); cluesEl.appendChild(b);
+        });
+        const starsEl = document.getElementById('stars'); WORDS.forEach(() => { starsEl.insertAdjacentHTML('beforeend', '<svg class="star" viewBox="0 0 24 24"><path d="M12 2l3 7 7 .6-5.4 4.7 1.7 7.2L12 17.6 5.7 21.5l1.7-7.2L2 9.6 9 9z"/></svg>'); });
+
+        let active = 0, cur = null; const solved = new Set();
+        function firstEmpty(w) { return w.cells.find(K => !inputs[K].value) || w.cells[0]; }
+        function focusCell(K) { inputs[K].focus(); }
+        function onFocus(K) { cur = K; if (!cells[K].words.includes(active)) active = cells[K].words[0]; paint(); }
+        function toggleDir(K) { const ws = cells[K].words; if (ws.length > 1) { active = ws.find(x => x !== active); paint(); } }
+        function paint() {
+            Object.values(cells).forEach(c => c.el.classList.remove('inword', 'cur'));
+            WORDS[active].cells.forEach(K => cells[K].el.classList.add('inword')); if (cur) cells[cur].el.classList.add('cur');
+            document.querySelectorAll('.card').forEach((c, i) => c.classList.toggle('active', i === active));
+            const w = WORDS[active]; document.getElementById('nowBadge').textContent = w.n + ' ' + (w.dir === 'down' ? 'Down' : 'Across'); document.getElementById('nowBadge').style.background = COLORS[active];
+            document.getElementById('nowText').textContent = w.clue;
+        }
+        function step(d) { const w = WORDS[active], idx = w.cells.indexOf(cur), nk = w.cells[idx + d]; if (nk) focusCell(nk); }
+        function onInput(e, K) {
+            const inp = inputs[K]; let v = (inp.value || '').replace(/[^a-zA-ZñÑ]/g, ''); v = v.slice(-1).toUpperCase(); inp.value = v;
+            cells[K].el.classList.remove('bad'); if (v) { checkWords(); step(1); }
+        }
+        function onKey(e, K) {
+            const { r, c } = cells[K];
+            if (e.key === 'Backspace') { if (!inputs[K].value) { e.preventDefault(); step(-1); if (cur) inputs[cur].value = ''; } return; }
+            const mv = { ArrowRight: [0, 1], ArrowLeft: [0, -1], ArrowDown: [1, 0], ArrowUp: [-1, 0] }[e.key];
+            if (mv) {
+                e.preventDefault(); const want = mv[0] ? 'down' : 'across'; const ws = cells[K].words.find(i => WORDS[i].dir === want);
+                let nr = r + mv[0], nc = c + mv[1]; while (nr >= 0 && nr < N && nc >= 0 && nc < N) { const NK = key(nr, nc); if (cells[NK]) { const w2 = cells[NK].words.find(i => WORDS[i].dir === want); active = w2 !== undefined ? w2 : cells[NK].words[0]; focusCell(NK); return; } nr += mv[0]; nc += mv[1]; }
+            }
+            if (e.key === 'Enter') { e.preventDefault(); active = (active + 1) % WORDS.length; focusCell(firstEmpty(WORDS[active])); }
+        }
+        function norm(s) { return (s || '').toUpperCase(); }
+        function checkWords() {
+            WORDS.forEach((w, i) => {
+                const ok = w.cells.every(K => norm(inputs[K].value) === cells[K].letter);
+                if (ok && !solved.has(i)) { solved.add(i); celebrate(i); }
+            }); updateProgress();
+        }
+        function celebrate(i) {
+            const w = WORDS[i]; w.cells.forEach((K, j) => { setTimeout(() => { cells[K].el.classList.add('solved', 'pop'); setTimeout(() => cells[K].el.classList.remove('pop'), 450); }, j * 60); });
+            const card = document.getElementById('card' + i); card.classList.add('solved'); const a = card.querySelector('.ans'); a.hidden = false; a.textContent = w.show;
+            const rect = cells[w.cells[Math.floor(w.cells.length / 2)]].el.getBoundingClientRect(); burst(rect.left + rect.width / 2, rect.top + rect.height / 2, 40);
+            if (solved.size === WORDS.length) setTimeout(() => { document.getElementById('win').hidden = false; rain(); }, 900);
+            else { const nx = WORDS.findIndex((x, j) => !solved.has(j)); if (nx >= 0 && document.activeElement && WORDS[active] === w) { active = nx; setTimeout(() => focusCell(firstEmpty(WORDS[nx])), 500); } }
+        }
+        function updateProgress() { document.getElementById('count').textContent = solved.size + ' / 6'; document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('on', i < solved.size)); }
+
+        document.getElementById('check').onclick = () => {
+            let any = false; Object.entries(inputs).forEach(([K, inp]) => { if (inp.value && norm(inp.value) !== cells[K].letter) { any = true; const el = cells[K].el; el.classList.remove('bad'); void el.offsetWidth; el.classList.add('bad'); setTimeout(() => el.classList.remove('bad'), 1500); } });
+            if (!any) { const t = document.getElementById('nowText'); t.textContent = solved.size === 6 ? 'Everything is correct!' : 'No mistakes so far. Keep going!'; }
+        };
+        document.getElementById('hint').onclick = () => { const w = WORDS[active]; const K = w.cells.find(K => norm(inputs[K].value) !== cells[K].letter); if (!K) return; inputs[K].value = cells[K].letter; cells[K].el.classList.add('pop'); setTimeout(() => cells[K].el.classList.remove('pop'), 450); checkWords(); focusCell(K); };
+        function resetAll() {
+            Object.values(inputs).forEach(i => i.value = ''); Object.values(cells).forEach(c => c.el.classList.remove('solved', 'bad')); solved.clear();
+            document.querySelectorAll('.card').forEach(c => { c.classList.remove('solved'); c.querySelector('.ans').hidden = true; }); updateProgress(); document.getElementById('win').hidden = true; active = 0; cur = null; paint();
+        }
+        document.getElementById('reset').onclick = resetAll; document.getElementById('again').onclick = () => { resetAll(); focusCell(WORDS[0].cells[0]); };
+
+        /* confetti */
+        const cv = document.getElementById('fx'), cx = cv.getContext('2d'); let parts = [], running = false; const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+        function size() { cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio; cx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); } size(); addEventListener('resize', size);
+        const PC = ['#ff7a1a', '#7b4ce2', '#ff4f8b', '#14b8a6', '#ffc928', '#2f80ed'];
+        function burst(x, y, n) { if (RM) return; for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, s = 3 + Math.random() * 6; parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 3, r: Math.random() * 6, w: 5 + Math.random() * 6, c: PC[i % 6], l: 70 + Math.random() * 30 }); } loop(); }
+        function rain() { if (RM) return; for (let i = 0; i < 160; i++)parts.push({ x: Math.random() * innerWidth, y: -20 - Math.random() * 300, vx: Math.random() * 2 - 1, vy: 2 + Math.random() * 3, r: Math.random() * 6, w: 6 + Math.random() * 6, c: PC[i % 6], l: 200 }); loop(); }
+        function loop() {
+            if (running) return; running = true; (function f() {
+                cx.clearRect(0, 0, innerWidth, innerHeight); parts = parts.filter(p => p.l-->0&&p.y<innerHeight+30);
+                parts.forEach(p => { p.vy += .15; p.x += p.vx; p.y += p.vy; p.r += .1; cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r); cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.w / 4, p.w, p.w / 2); cx.restore(); });
+                if (parts.length) requestAnimationFrame(f); else { running = false; cx.clearRect(0, 0, innerWidth, innerHeight); }
+            })();
+        }
+
+        paint();
+    </script>
+
+</body>
+
+</html>
